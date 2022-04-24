@@ -1,8 +1,23 @@
 import socket
-# from multiprocessing.pool import ThreadPool
-# from tqdm import tqdm
+import requests
 
-# scanned = []
+
+def get_service_name(s, port1, protocol1='http'):
+    host = socket.gethostbyname(f'{s}')
+    if port1 == 443:
+        protocol1 = 'https'
+    elif port1 == 80:
+        protocol1 = 'http'
+    try:
+        response = requests.get(f'{protocol1}://{host}:{port1}', verify=False)
+        if 'server' in headers.keys():
+            service_name = response.headers.get('server')
+            return f'{service_name}'
+        elif 'Server' in headers.keys():
+            service_name = response.headers.get('server')
+            return f'{service_name}'
+    except Exception:
+        pass
 
 
 def parse(text_response):
@@ -10,29 +25,35 @@ def parse(text_response):
     status_raw, lines = lines[0], lines[1:]
     status_raw = status_raw.split(' ')
     status_code, message = status_raw[1], status_raw[2:]
-    empty_index = 1
     headers = {}
     for index, line in enumerate(lines):
         line = line.strip()
         line = line.strip('\r')
         if line == '':
-            empty_index = index
             break
         print(line)
         k, _, v = line.partition(':')
         headers.setdefault(k.strip(), v.strip())
-    content = ''.join(lines[empty_index + 1:])
-    return int(status_code), headers, content
+    return int(status_code), headers
 
 
-# def check_port(port):
-#     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-#         sock.settimeout(1)
-#         return None if sock.connect((f'{s}', port)) else port
+def check_port(s, port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(10)
+        try:
+            return sock.connect((f'{s}', port))
+        except Exception:
+            pass
 
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s = input("Введите доменное имя: ")
+print(check_port(f'{s}', 443))
+print(check_port(f'{s}', 80))
+if check_port(f'{s}', 443) is not None:
+    port1 = 443
+else:
+    port1 = 80
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((f'{s}', 80))
 content_items = [
     'GET / HTTP/1.1',
@@ -42,49 +63,16 @@ content_items = [
     '\n'
 ]
 content = '\n'.join(content_items)
-print(content)
 sock.send(content.encode())
 result = sock.recv(10024)
-status_code, headers, content = parse(result.decode())
+status_code, headers = parse(result.decode())
+print()
 print('Status Code: {}'.format(status_code))
-print('Headers: {}'.format(headers))
-print('Content:')
-print(content)
-# s = socket.gethostbyname(s)
-# if __name__ == '__main__':
-#     pool = ThreadPool(3000)
-#     scanned = list(
-#         tqdm(pool.imap(check_port, range(1, 65536)), total=65535, desc=f'Scanning {s}')
-#     )
-
-
-# def get_service_name(s, scanned):
-#     port1 = 0
-#     service_name = 'Неопределён'
-#     if 443 in scanned:
-#         protocol1 = 'https'
-#         port1 = 443
-#     elif 80 in scanned:
-#         protocol1 = 'http'
-#         port1 = 80
-#     try:
-#         sock.connect((f'{s}', port1))
-#         content_items = [
-#             'GET / HTTP/1.1',
-#             f'Host: {s}',
-#             'Connection: keep-alive',
-#             'accept: text/html',
-#             '\n'
-#         ]
-#         content = '\n'.join(content_items)
-#         sock.send(content.encode())
-#         result = sock.recv(10024)
-#         status_code, headers, content = parse(result.decode())
-#         if 'server' in headers.keys():
-#             service_name = headers['server']
-#             return f'{service_name}'
-#     except Exception:
-#         pass
-
-
-# get_service_name(s,scanned)
+print('Port: {}'.format(port1))
+# метод 1
+if 'server' in headers:
+    print("Service_name: ", headers['server'])
+elif 'Server' in headers:
+    print("Service_name: ", headers['Server'])
+# метод 2
+print("Service_name: ", get_service_name(s, port1))
