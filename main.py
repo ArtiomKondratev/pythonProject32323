@@ -147,6 +147,3 @@ class NedoScannerSN:
             elif 'Server' in headers:
                 return "Service_name: ", headers['Server']
         print('No input')
-
-
-# port_scanner = NedoScannerSN()
