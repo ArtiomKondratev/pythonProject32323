@@ -85,7 +85,7 @@ class ScannerSN:
 
 class NedoScannerSN:
     def __init__(self):
-        self.output()
+        print(self.output())
 
     def get_input_data(self):
         s = input("Введите доменное имя: ")
@@ -147,3 +147,6 @@ class NedoScannerSN:
             elif 'Server' in headers:
                 return "Service_name: ", headers['Server']
         print('No input')
+
+
+# port_scanner = NedoScannerSN()
